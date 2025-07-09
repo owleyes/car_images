@@ -123,8 +123,10 @@ async def generate_image(
         for attempt in range(5):
             try:
                 response = await client.images.generate(
+                    model="dall-e-3",
                     prompt=prompt,
                     size="1024x1024",
+                    quality="standard",
                     n=1,
                     response_format="b64_json"
                 )
@@ -167,7 +169,7 @@ async def main(args: argparse.Namespace) -> None:
     if args.max_images < len(pairs):
         pairs = pairs[: args.max_images]
 
-    semaphore = asyncio.Semaphore(5)
+    semaphore = asyncio.Semaphore(1)
     metadata: List[Dict[str, Any]] = []
 
     tasks = [
