@@ -10,10 +10,16 @@ class Detector:
     def get_model(self) -> nn.Module:
         pass
 
-    def train_model(self, model, train_dataset, eval_dataset, num_epochs, batch_size) -> nn.Module:
+    def save_checkpoint(self, filename):
         pass
 
-    def infer_model(self, model, image, device) -> str:
+    def load_checkpoint(self, filename):
+        pass
+
+    def train_model(self, train_dataset, eval_dataset, num_epochs, batch_size) -> nn.Module:
+        pass
+
+    def infer_model(self, image) -> str:
         pass
 
     def _compute_inference_metrics(self, df_cm, y_true) -> Tuple[pd.DataFrame, float]:
@@ -38,9 +44,7 @@ class Detector:
 
         return df_metrics, accuracy
 
-    def evaluate_model(self, model, eval_dataset) -> Tuple[List[str], List[str], List[PIL.Image.Image], pd.DataFrame, pd.DataFrame, float, int, Dict[str, List[str]]]:
-        model.eval()
-
+    def evaluate_model(self, eval_dataset) -> Tuple[List[str], List[str], List[PIL.Image.Image], pd.DataFrame, pd.DataFrame, float, int, Dict[str, List[str]]]:
         y_true = []
         y_pred = []
         images = []
@@ -52,7 +56,7 @@ class Detector:
             image = sample["image"]
             label = sample["label"]
 
-            prediction = self.infer_model(model, image)
+            prediction = self.infer_model(image)
 
             y_true.append(label)
             y_pred.append(prediction)

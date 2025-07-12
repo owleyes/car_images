@@ -1,3 +1,4 @@
+import os
 import torch
 import numpy as np
 import torch.nn as nn
@@ -101,9 +102,37 @@ class CarDataset(Dataset):
 class UNetDetector(Detector):
     def __init__(self):
         super().__init__()
+        self.model = None
+        self.optimizer = None
+
+    def save_checkpoint(self, filename):
+        checkpoint_dir = "checkpoints"        
+        checkpoint_path = os.path.join(checkpoint_dir, filename)
+        os.makedirs(checkpoint_dir, exist_ok=True)
+        
+        checkpoint = {
+            'model_state_dict': self.model.state_dict(),
+            'optimizer_state_dict': self.optimizer.state_dict(),
+        }
+        
+        torch.save(checkpoint, checkpoint_path)
+        print(f"Checkpoint saved to {checkpoint_path}")
+
+    def load_checkpoint(self, filename):
+        checkpoint_dir = "checkpoints"
+        checkpoint_path = os.path.join(checkpoint_dir, filename)
+        
+        if not os.path.exists(checkpoint_path):
+            raise FileNotFoundError(f"Checkpoint file not found: {checkpoint_path}")
+        
+        checkpoint = torch.load(checkpoint_path)
+        self.model.load_state_dict(checkpoint['model_state_dict'])
+        self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])        
 
     def get_model(self) -> nn.Module:
-        return UNetClassifier()
+        self.model = UNetClassifier()
+        self.optimizer = optim.AdamW(self.model.parameters(), lr=1e-4)
+        return self.model
         
     def _get_data_collator(self):
         def collate_fn(batch):
@@ -132,12 +161,12 @@ class UNetDetector(Detector):
             "bad_predictions": bad_predictions
         }
 
-    def train_model(self, model, train_dataset, eval_dataset, num_epochs, batch_size) -> nn.Module:
+    def train_model(self, train_dataset, eval_dataset, num_epochs, batch_size) -> nn.Module:
         device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
         print(f"Using device: {device}")
         
         # Initialize model and move to device
-        model = model.to(device)
+        self.model = self.model.to(device)
         
         # Create data loaders
         train_loader = DataLoader(
@@ -154,13 +183,12 @@ class UNetDetector(Detector):
             collate_fn=self._get_data_collator()
         )
         
-        # Initialize optimizer and loss function
-        optimizer = optim.AdamW(model.parameters(), lr=1e-4)
+        # Initialize loss function
         criterion = nn.CrossEntropyLoss()
         
         # Training loop
         for epoch in range(num_epochs):
-            model.train()
+            self.model.train()
             train_loss = 0
             train_metrics = []
             
@@ -172,15 +200,15 @@ class UNetDetector(Detector):
                     labels = batch["label"].to(device)
                     
                     # Zero gradients
-                    optimizer.zero_grad()
+                    self.optimizer.zero_grad()
                     
                     # Forward pass
-                    outputs = model(images)
+                    outputs = self.model(images)
                     loss = criterion(outputs, labels)
                     
                     # Backward pass
                     loss.backward()
-                    optimizer.step()
+                    self.optimizer.step()
                     
                     # Track metrics
                     train_loss += loss.item()
@@ -200,7 +228,7 @@ class UNetDetector(Detector):
             }
             
             # Evaluation
-            model.eval()
+            self.model.eval()
             eval_loss = 0
             eval_metrics = []
             
@@ -209,7 +237,7 @@ class UNetDetector(Detector):
                     images = batch["image"].to(device)
                     labels = batch["label"].to(device)
                     
-                    outputs = model(images)
+                    outputs = self.model(images)
                     loss = criterion(outputs, labels)
                     
                     eval_loss += loss.item()
@@ -228,20 +256,19 @@ class UNetDetector(Detector):
             print(f"Train Metrics: {avg_train_metrics}")
             print(f"Eval Metrics: {avg_eval_metrics}")
             
-        return model
+        return self.model
 
-    def infer_model(self, model, image, device=None):
-        if device is None:
-            device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
+    def infer_model(self, image):
+        device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
         
-        model = model.to(device)
-        model.eval()
+        self.model = self.model.to(device)
+        self.model.eval()
         
         with torch.no_grad():
             image = transforms.ToTensor()(image).unsqueeze(0).to(device)
             
             # Get model output
-            output = model(image)
+            output = self.model(image)
             
             # Get predicted class (0 or 1)
             pred_class = output.argmax(dim=1).item()
