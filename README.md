@@ -9,7 +9,7 @@ This project focuses on detecting fake car damage images.
 - Conda (recommended)
 - Git
 
-### Using Conda (Recommended)
+### Setup Conda Environment
 
 1. Create a new conda environment with Python 3.13:
 ```bash
