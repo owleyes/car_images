@@ -1,6 +1,6 @@
 # Car Images Project
 
-This project focuses on processing and analyzing car images.
+This project focuses on detecting fake car damage images.
 
 ## Setup Instructions
 
@@ -38,34 +38,9 @@ car_images/
 conda activate car_images
 ```
 
-2. Run the main script:
+2. Run the image generation script:
 ```bash
 python generate_damaged_cars.py
 ```
 
-### Troubleshooting
-
-#### Common Issues
-1. **CUDA not found**: Ensure you have CUDA installed if you want to use GPU acceleration.
-2. **Package version conflicts**: Try installing packages one by one if there are version conflicts.
-3. **Memory issues**: Reduce batch sizes or use CPU if you encounter memory errors.
-
-#### Package Notes
-- `torch`: For deep learning operations
-- `transformers`: For NLP and computer vision models
-- `scikit-learn`: For traditional machine learning tasks
-- `Pillow`: For image processing
-- `numpy`: For numerical operations
-- `pandas`: For data manipulation
-
-### Contributing
-
-1. Fork the repository
-2. Create your feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
+3. Run the image detector.ipynb notebook from your Jupyter environment
