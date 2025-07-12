@@ -16,7 +16,7 @@ class Detector:
     def load_checkpoint(self, filename):
         pass
 
-    def train_model(self, train_dataset, eval_dataset, num_epochs, batch_size) -> nn.Module:
+    def train_model(self, train_dataset, eval_dataset, num_epochs, batch_size) -> int:
         pass
 
     def infer_model(self, image) -> str:

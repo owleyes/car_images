@@ -16,8 +16,8 @@ class CarDamageDatasetLoader:
         if not os.path.isdir(dataset_folder):
             raise Exception(f"{dataset_folder} path does not exist")
 
+        self.size = (299, 299) # Image size for Xception
         self.dataset_folder = dataset_folder
-        self.size = (224, 224)
         self.sample_per_label = sample_per_label
         self.training_percent = training_percent
 
