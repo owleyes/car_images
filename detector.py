@@ -22,6 +22,9 @@ class Detector:
     def infer_model(self, image) -> str:
         pass
 
+    def evaluate_model(self, eval_dataset) -> Tuple[List[str], List[str], List[PIL.Image.Image], pd.DataFrame, pd.DataFrame, float, int, Dict[str, List[str]]]:
+        pass
+
     def _compute_inference_metrics(self, df_cm, y_true) -> Tuple[pd.DataFrame, float]:
         metrics = []
         total_tp_tn = 0
@@ -57,7 +60,6 @@ class Detector:
             label = sample["label"]
 
             prediction = self.infer_model(image)
-
             y_true.append(label)
             y_pred.append(prediction)
             images.append(image)

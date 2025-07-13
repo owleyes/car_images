@@ -16,7 +16,7 @@ class CarDamageDatasetLoader:
         if not os.path.isdir(dataset_folder):
             raise Exception(f"{dataset_folder} path does not exist")
 
-        self.size = (299, 299) # Image size for Xception
+        self.size = (224, 224)
         self.dataset_folder = dataset_folder
         self.sample_per_label = sample_per_label
         self.training_percent = training_percent
@@ -43,7 +43,7 @@ class CarDamageDatasetLoader:
         
         for label in self.labels:
             label_dict[label] = []
-            for file in glob(os.path.join(self.dataset_folder, self.label_folders[label], "*.jpg")):
+            for file in glob(os.path.join(self.dataset_folder, self.label_folders[label], "*.jp*g"), recursive=True):
                 label_dict[label].append(file)
             
             files = label_dict[label]

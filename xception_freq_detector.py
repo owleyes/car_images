@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 from torch import optim
 import torch.nn.functional as F
-from vanilla_pytorch_detector import VanillaPytorchDetector
+from vanilla_pytorch_detector import VanillaPytorchDetector, compute_frequency_input
 
 
 class SeparableConv2d(nn.Module):
@@ -162,32 +162,12 @@ class TwoStreamXception(nn.Module):
         )
 
     def forward(self, rgb):
-        freq = self._compute_frequency_input(rgb)
-        return self.forward_freq(rgb, freq)
-
-    def forward_freq(self, rgb, freq):
+        freq = compute_frequency_input(rgb)
         spatial_features = self.spatial_stream(rgb)
         freq_features = self.frequency_stream(freq)
         fused = torch.cat((spatial_features, freq_features), dim=1)
         out = self.fusion(fused)
         return out
-
-    def _compute_frequency_input(self, images):
-        # Assuming image is RGB tensor [B, 3, H, W]
-        # Convert to grayscale
-        gray = 0.299 * images[:, 0, :, :] + 0.587 * images[:, 1, :, :] + 0.114 * images[:, 2, :, :]
-        gray = gray.unsqueeze(1)  # [B, 1, H, W]
-        
-        # Compute FFT
-        fft = torch.fft.fft2(gray)
-        fft_shift = torch.fft.fftshift(fft)
-        
-        # Magnitude spectrum
-        magnitude = torch.log(torch.abs(fft_shift) + 1e-10)  # Log scale for better visualization/detection
-        
-        # Normalize to [0,1] or standardize as needed
-        magnitude = (magnitude - magnitude.min()) / (magnitude.max() - magnitude.min())
-        return magnitude
 
 
 class XceptionFreqDetector(VanillaPytorchDetector):

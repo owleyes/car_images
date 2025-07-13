@@ -16,6 +16,7 @@ class CarDataset(Dataset):
         self.dataset = dataset
         self.transform = transforms.Compose([
             transforms.ToTensor(),
+            # IMPORTANT: Should match denormalization in compute_frequency_input()
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         ])
         
@@ -38,6 +39,30 @@ class CarDataset(Dataset):
             "label": torch.tensor(label, dtype=torch.long)
         }
 
+
+def compute_frequency_input(image):
+    # IMPORTANT: Should match normalization in CarDataset
+    # Assuming image is RGB tensor [B, 3, H, W] normalized with ImageNet stats
+    # Denormalize to [0,1] range
+    mean = torch.tensor([0.485, 0.456, 0.406]).view(1, 3, 1, 1).to(image.device)
+    std = torch.tensor([0.229, 0.224, 0.225]).view(1, 3, 1, 1).to(image.device)
+    denorm_image = image * std + mean
+    
+    # Convert to grayscale using denormalized image
+    gray = 0.299 * denorm_image[:, 0, :, :] + 0.587 * denorm_image[:, 1, :, :] + 0.114 * denorm_image[:, 2, :, :]
+    gray = gray.unsqueeze(1)  # [B, 1, H, W]
+    
+    # Compute FFT
+    fft = torch.fft.fft2(gray)
+    fft_shift = torch.fft.fftshift(fft)
+    
+    # Magnitude spectrum
+    magnitude = torch.log(torch.abs(fft_shift) + 1e-10)  # Log scale for better visualization/detection
+    
+    # Normalize to [0,1]
+    magnitude = (magnitude - magnitude.min()) / (magnitude.max() - magnitude.min() + 1e-10)
+    
+    return magnitude
 
 class VanillaPytorchDetector(Detector):
     def __init__(self):
@@ -199,7 +224,10 @@ class VanillaPytorchDetector(Detector):
         self.model.eval()
         
         with torch.no_grad():
-            image = transforms.ToTensor()(image).unsqueeze(0).to(device)
+            image = transforms.ToTensor()(image)
+            image = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])(image)
+            image = image.unsqueeze(0)
+            image = image.to(device)
             
             # Get model output
             output = self.model(image)
