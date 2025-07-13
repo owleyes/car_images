@@ -22,19 +22,23 @@ class CarDamageDatasetLoader:
         self.training_percent = training_percent
 
     def _load_image(self, image_path):
-        """Center crop an image to the specified size."""
         image = PIL.Image.open(image_path)
-        width, height = image.size
         
-        # Calculate the center crop coordinates
-        left = (width - self.size[0]) / 2
-        top = (height - self.size[1]) / 2
-        right = (width + self.size[0]) / 2
-        bottom = (height + self.size[1]) / 2
+        # Resize the image to the specified size using bilinear interpolation
+        image = image.resize(self.size, PIL.Image.Resampling.BILINEAR)
+        return image
+
+        # width, height = image.size
         
-        # Crop the image
-        cropped_image = image.crop((left, top, right, bottom))
-        return cropped_image
+        # # Calculate the center crop coordinates
+        # left = (width - self.size[0]) / 2
+        # top = (height - self.size[1]) / 2
+        # right = (width + self.size[0]) / 2
+        # bottom = (height + self.size[1]) / 2
+        
+        # # Crop the image
+        # image = image.crop((left, top, right, bottom))
+        # return image
 
     def load_dataset(self):
         label_dict = {}
@@ -43,7 +47,7 @@ class CarDamageDatasetLoader:
         
         for label in self.labels:
             label_dict[label] = []
-            for file in glob(os.path.join(self.dataset_folder, self.label_folders[label], "*.jp*g"), recursive=True):
+            for file in glob(os.path.join(self.dataset_folder, self.label_folders[label], "*"), recursive=True):
                 label_dict[label].append(file)
             
             files = label_dict[label]
