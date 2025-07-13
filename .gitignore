@@ -1,5 +1,6 @@
 # Python
 out/
+generated_images/
 dataset/
 checkpoints/
 __pycache__/
