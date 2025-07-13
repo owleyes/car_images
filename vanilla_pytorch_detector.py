@@ -80,7 +80,6 @@ class VanillaPytorchDetector(Detector):
         }
         
         torch.save(checkpoint, checkpoint_path)
-        print(f"Checkpoint saved to {checkpoint_path}")
 
     def load_checkpoint(self, filename):
         checkpoint_dir = "checkpoints"
@@ -122,7 +121,10 @@ class VanillaPytorchDetector(Detector):
 
     def train_model(self, train_dataset, eval_dataset, num_epochs, batch_size) -> nn.Module:
         device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
-        print(f"Using device: {device}")
+        
+        best_precision = -1.0
+        best_epoch = -1
+        best_checkpoint_filename = ""
         
         # Initialize model and move to device
         self.model = self.model.to(device)
@@ -209,11 +211,21 @@ class VanillaPytorchDetector(Detector):
             }
             
             # Print epoch summary
-            print(f"\nEpoch {epoch + 1}/{num_epochs} Summary:")
+            print(f"Epoch {epoch + 1}/{num_epochs} Summary:")
             print(f"Train Loss: {train_loss/len(train_loader):.4f}")
             print(f"Eval Loss: {eval_loss/len(eval_loader):.4f}")
             print(f"Train Metrics: {avg_train_metrics}")
-            print(f"Eval Metrics: {avg_eval_metrics}")
+            print(f"Eval Metrics: {avg_eval_metrics}\n")
+
+            if avg_eval_metrics["precision"] > best_precision:
+                best_precision = avg_eval_metrics["precision"]
+                best_epoch = epoch + 1
+                best_checkpoint_filename = f"{self.__class__.__name__}_epoch_{best_epoch}.pth"
+                print(f"New best precision: {avg_eval_metrics['precision']:.4f}, saving checkpoint to {best_checkpoint_filename}\n")
+                self.save_checkpoint(best_checkpoint_filename)
+
+        print(f"\nBest precision: {best_precision:.4f}, at epoch {best_epoch}, loading checkpoint from: {best_checkpoint_filename}\n")
+        self.load_checkpoint(best_checkpoint_filename)
             
         return self.model
 
